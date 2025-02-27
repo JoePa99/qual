@@ -1,6 +1,9 @@
 // API configuration
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.openai.com/v1';
+const API_PROVIDER = import.meta.env.VITE_API_PROVIDER || 'openai'; // Can be 'openai' or 'anthropic'
+const API_URL = import.meta.env.VITE_API_URL || 
+  (API_PROVIDER === 'anthropic' ? 'https://api.anthropic.com/v1' : 'https://api.openai.com/v1');
 const API_KEY = import.meta.env.VITE_API_KEY || '';
+const CLAUDE_MODEL = import.meta.env.VITE_CLAUDE_MODEL || 'claude-3-sonnet-20240229';
 
 interface AIResponse {
   status: 'success' | 'error';
@@ -47,42 +50,86 @@ export const AIService = {
         return simulateSegmentGeneration(request);
       }
 
-      const response = await fetch(`${API_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an expert market researcher and customer insights analyst. Your task is to identify ${request.segmentCount} customer segments from the provided research data using a ${request.approach} approach.`
-            },
-            {
-              role: 'user',
-              content: `Generate ${request.segmentCount} customer segments based on this research data: ${request.researchData} ${request.customPrompt ? `\n\nAdditional instructions: ${request.customPrompt}` : ''}`
-            }
-          ],
-          response_format: { type: 'json_object' }
-        })
-      });
+      if (API_PROVIDER === 'anthropic') {
+        // Anthropic Claude API call
+        const response = await fetch(`${API_URL}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: 4000,
+            system: `You are an expert market researcher and customer insights analyst. Your task is to identify ${request.segmentCount} customer segments from the provided research data using a ${request.approach} approach. Return results in JSON format.`,
+            messages: [
+              {
+                role: 'user',
+                content: `Generate ${request.segmentCount} customer segments based on this research data: ${request.researchData} ${request.customPrompt ? `\n\nAdditional instructions: ${request.customPrompt}` : ''}\n\nReturn the results in the following JSON format: { "segments": [ { "id": 1, "name": "Segment Name", "description": "Segment description", "size": 30, "characteristics": ["trait 1", "trait 2"], "affinities": ["affinity 1", "affinity 2"], "painPoints": ["pain point 1", "pain point 2"] }, ... ] }`
+              }
+            ]
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract content from Claude's response
+        let contentStr = data.content[0].text;
+        // Find JSON in the response
+        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          contentStr = jsonMatch[0];
+        }
+        
+        const segments = JSON.parse(contentStr);
+        
+        return {
+          status: 'success',
+          data: segments
+        };
+      } else {
+        // OpenAI API call
+        const response = await fetch(`${API_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert market researcher and customer insights analyst. Your task is to identify ${request.segmentCount} customer segments from the provided research data using a ${request.approach} approach.`
+              },
+              {
+                role: 'user',
+                content: `Generate ${request.segmentCount} customer segments based on this research data: ${request.researchData} ${request.customPrompt ? `\n\nAdditional instructions: ${request.customPrompt}` : ''}`
+              }
+            ],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Process the response into our expected segment format
+        const segments = JSON.parse(data.choices[0].message.content);
+        
+        return {
+          status: 'success',
+          data: segments
+        };
       }
-
-      const data = await response.json();
-      
-      // Process the response into our expected segment format
-      // This would need to be customized based on the actual API response format
-      const segments = JSON.parse(data.choices[0].message.content);
-      
-      return {
-        status: 'success',
-        data: segments
-      };
     } catch (error) {
       console.error('Error generating segments:', error);
       
@@ -100,41 +147,86 @@ export const AIService = {
         return simulateStimulusResponse(request);
       }
 
-      const response = await fetch(`${API_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: `You are simulating the responses of customers in the "${request.segmentName}" segment. Generate 5 different realistic responses to the stimulus, reflecting how people in this segment would respond.`
-            },
-            {
-              role: 'user',
-              content: `Generate responses to this prompt: "${request.stimulus}"`
-            }
-          ],
-          response_format: { type: 'json_object' }
-        })
-      });
+      if (API_PROVIDER === 'anthropic') {
+        // Anthropic Claude API call
+        const response = await fetch(`${API_URL}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: 2000,
+            system: `You are simulating the responses of customers in the "${request.segmentName}" segment. Generate 5 different realistic responses to the stimulus, reflecting how people in this segment would respond. Return results in JSON format.`,
+            messages: [
+              {
+                role: 'user',
+                content: `Generate 5 different realistic responses to this prompt: "${request.stimulus}"\n\nThese responses should reflect how people in the "${request.segmentName}" segment would respond.\n\nReturn the results in the following JSON format: { "responses": ["response 1", "response 2", "response 3", "response 4", "response 5"] }`
+              }
+            ]
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract content from Claude's response
+        let contentStr = data.content[0].text;
+        // Find JSON in the response
+        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          contentStr = jsonMatch[0];
+        }
+        
+        const content = JSON.parse(contentStr);
+        
+        return {
+          status: 'success',
+          data: content.responses || []
+        };
+      } else {
+        // OpenAI API call
+        const response = await fetch(`${API_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [
+              {
+                role: 'system',
+                content: `You are simulating the responses of customers in the "${request.segmentName}" segment. Generate 5 different realistic responses to the stimulus, reflecting how people in this segment would respond.`
+              },
+              {
+                role: 'user',
+                content: `Generate responses to this prompt: "${request.stimulus}"`
+              }
+            ],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Process the response into our expected format
+        const content = JSON.parse(data.choices[0].message.content);
+        
+        return {
+          status: 'success',
+          data: content.responses || []
+        };
       }
-
-      const data = await response.json();
-      
-      // Process the response into our expected format
-      const content = JSON.parse(data.choices[0].message.content);
-      
-      return {
-        status: 'success',
-        data: content.responses || []
-      };
     } catch (error) {
       console.error('Error generating stimulus responses:', error);
       
@@ -152,41 +244,86 @@ export const AIService = {
         return simulateFocusGroupResponses(request);
       }
 
-      const response = await fetch(`${API_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: `You are simulating a focus group discussion with participants from the "${request.segmentName}" segment. Each participant has a specific persona. Generate personalized responses for each participant to the discussion question.`
-            },
-            {
-              role: 'user',
-              content: `Generate responses to this question: "${request.question}" for these participants: ${JSON.stringify(request.participants)}`
-            }
-          ],
-          response_format: { type: 'json_object' }
-        })
-      });
+      if (API_PROVIDER === 'anthropic') {
+        // Anthropic Claude API call
+        const response = await fetch(`${API_URL}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: 3000,
+            system: `You are simulating a focus group discussion with participants from the "${request.segmentName}" segment. Each participant has a specific persona. Generate personalized responses for each participant to the discussion question. Return results in JSON format.`,
+            messages: [
+              {
+                role: 'user',
+                content: `Generate responses to this question: "${request.question}" for these participants: ${JSON.stringify(request.participants)}\n\nReturn the results in the following JSON format: { "responses": [{ "participantId": 1, "response": "participant's response" }, { "participantId": 2, "response": "another participant's response" }, ...] }`
+              }
+            ]
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract content from Claude's response
+        let contentStr = data.content[0].text;
+        // Find JSON in the response
+        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          contentStr = jsonMatch[0];
+        }
+        
+        const content = JSON.parse(contentStr);
+        
+        return {
+          status: 'success',
+          data: content.responses || []
+        };
+      } else {
+        // OpenAI API call
+        const response = await fetch(`${API_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [
+              {
+                role: 'system',
+                content: `You are simulating a focus group discussion with participants from the "${request.segmentName}" segment. Each participant has a specific persona. Generate personalized responses for each participant to the discussion question.`
+              },
+              {
+                role: 'user',
+                content: `Generate responses to this question: "${request.question}" for these participants: ${JSON.stringify(request.participants)}`
+              }
+            ],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Process the response into our expected format
+        const content = JSON.parse(data.choices[0].message.content);
+        
+        return {
+          status: 'success',
+          data: content.responses || []
+        };
       }
-
-      const data = await response.json();
-      
-      // Process the response into our expected format
-      const content = JSON.parse(data.choices[0].message.content);
-      
-      return {
-        status: 'success',
-        data: content.responses || []
-      };
     } catch (error) {
       console.error('Error generating focus group responses:', error);
       

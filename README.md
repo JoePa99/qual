@@ -47,10 +47,19 @@ A React application that uses AI to transform qualitative research into customer
 
 3. Configure environment variables:
    - Create a `.env` file in the root directory
-   - Add your API key for OpenAI or alternative AI service:
+   - Add your API key for either Claude (Anthropic) or OpenAI:
+     
      ```
-     VITE_API_URL=https://api.openai.com/v1
-     VITE_API_KEY=your_api_key_here
+     # For Claude (Anthropic)
+     VITE_API_PROVIDER=anthropic
+     VITE_API_URL=https://api.anthropic.com/v1
+     VITE_API_KEY=your_anthropic_api_key_here
+     VITE_CLAUDE_MODEL=claude-3-sonnet-20240229
+     
+     # For OpenAI
+     # VITE_API_PROVIDER=openai
+     # VITE_API_URL=https://api.openai.com/v1
+     # VITE_API_KEY=your_openai_api_key_here
      ```
 
 4. Start the development server:
@@ -65,16 +74,28 @@ A React application that uses AI to transform qualitative research into customer
 
 ### API Configuration
 
-The application can work in two modes:
+The application can work in three modes:
 
 1. **Demo Mode**: Without an API key, the app works with simulated responses and mock data.
 
-2. **Connected Mode**: With a valid API key, the app connects to an AI service (default: OpenAI) to generate real insights.
+2. **Claude Mode**: With a valid Anthropic API key, the app connects to Claude to generate real insights.
+
+3. **OpenAI Mode**: With a valid OpenAI API key, the app connects to OpenAI to generate real insights.
 
 To enable Connected Mode:
-- Obtain an API key from OpenAI or your preferred AI service provider
-- Add it to the `.env` file as shown above
+- Choose your preferred AI provider (Claude or OpenAI)
+- Obtain an API key from Anthropic or OpenAI
+  - For Claude: https://console.anthropic.com/
+  - For OpenAI: https://platform.openai.com/
+- Configure the `.env` file with your provider choice and API key
 - The app will automatically use real AI responses when available
+
+**Using Claude:**
+Claude offers strong capabilities for qualitative analysis and is the recommended option for this application. To use Claude, you need to:
+1. Set `VITE_API_PROVIDER=anthropic` 
+2. Set `VITE_API_URL=https://api.anthropic.com/v1`
+3. Use a Claude API key in `VITE_API_KEY`
+4. Optionally specify a model version in `VITE_CLAUDE_MODEL`
 
 ## Project Structure
 
