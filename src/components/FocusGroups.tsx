@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './FocusGroups.css';
+import { AIService } from '../services/aiService';
 
 interface Segment {
   id: number;
@@ -332,78 +333,44 @@ const FocusGroups = () => {
     
     setIsProcessingResponses(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate responses based on segment
-    const segmentId = activeGroup.segmentId;
-    const participants = activeGroup.participants;
-    
-    const generateResponse = (participantId: number, prompt: string) => {
-      const participant = participants.find(p => p.id === participantId);
-      if (!participant) return "";
+    try {
+      // Call AI service to get focus group responses
+      const result = await AIService.getFocusGroupResponses({
+        segmentId: activeGroup.segmentId,
+        segmentName: activeGroup.segmentName,
+        participants: activeGroup.participants,
+        question: customStimulus
+      });
       
-      // Personalize responses based on segment and participant
-      if (segmentId === 1) { // Young Professionals
-        const responses = [
-          `As someone working in ${participant.occupation}, I approach ${prompt} with a focus on efficiency and innovation. I'm always looking for digital solutions that integrate with my workflow.`,
-          `Living in ${participant.location}, I find that ${prompt} is something I deal with mostly through my smartphone, often while commuting or between meetings.`,
-          `I'd say that ${prompt} is important to me, but only if it saves me time and enhances my experience. I'm willing to pay more for convenience.`,
-          `My perspective on ${prompt} is shaped by my fast-paced lifestyle. I need solutions that understand my time is valuable and offer personalization.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      } else if (segmentId === 2) { // Suburban Families
-        const responses = [
-          `As a ${participant.age}-year-old parent, ${prompt} is something I consider carefully in terms of how it affects our family budget and daily routine.`,
-          `Living in ${participant.location} with a family means ${prompt} needs to be practical, durable, and offer good value for money.`,
-          `My approach to ${prompt} involves extensive research and often consulting with other parents in similar situations before making decisions.`,
-          `When it comes to ${prompt}, safety and reliability are my top priorities, followed by affordability. I'm willing to pay more for things we use daily.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      } else if (segmentId === 3) { // Value Seekers
-        const responses = [
-          `As someone who watches their budget carefully, ${prompt} is something I approach with a focus on finding the best deal possible.`,
-          `Working as a ${participant.occupation} has taught me to be strategic about ${prompt}. I compare prices across multiple stores and use coupon apps.`,
-          `I'm not loyal to brands when it comes to ${prompt} - I go with whatever offers the best value at the time of purchase.`,
-          `For ${prompt}, I'm willing to put in extra effort or wait for sales if it means saving money. It's all about being smart with your finances.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      } else { // Luxury Enthusiasts
-        const responses = [
-          `As a ${participant.occupation} based in ${participant.location}, I view ${prompt} as an opportunity to experience something exceptional and unique.`,
-          `When it comes to ${prompt}, I expect craftmanship, heritage, and personalized service. I'm willing to pay premium for quality.`,
-          `My approach to ${prompt} is focused on finding products and services that reflect my personal taste and status. I research extensively before committing.`,
-          `I find that ${prompt} is best when the experience is seamless across all touchpoints. I expect the same level of service whether online or in-person.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      }
-    };
-    
-    // Generate a response for each participant
-    const newResponses = participants.map(participant => ({
-      participantId: participant.id,
-      response: generateResponse(participant.id, customStimulus)
-    }));
-    
-    // Update the focus group with the new responses
-    const updatedGroups = focusGroups.map(group => {
-      if (group.id === activeGroup.id) {
-        return {
-          ...group,
-          session: {
-            ...group.session!,
-            currentQuestion: customStimulus,
-            responses: newResponses
+      if (result.status === 'success' && result.data) {
+        // Update the focus group with the new responses
+        const updatedGroups = focusGroups.map(group => {
+          if (group.id === activeGroup.id) {
+            return {
+              ...group,
+              session: {
+                ...group.session!,
+                currentQuestion: customStimulus,
+                responses: result.data
+              }
+            };
           }
-        };
+          return group;
+        });
+        
+        setFocusGroups(updatedGroups);
+        setActiveGroup(updatedGroups.find(g => g.id === activeGroup.id) || null);
+      } else {
+        console.error('Failed to get AI responses:', result.error);
+        alert('Failed to generate focus group responses. Please try again.');
       }
-      return group;
-    });
-    
-    setFocusGroups(updatedGroups);
-    setActiveGroup(updatedGroups.find(g => g.id === activeGroup.id) || null);
-    setIsProcessingResponses(false);
-    setCustomStimulus('');
+    } catch (error) {
+      console.error('Error getting focus group responses:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsProcessingResponses(false);
+      setCustomStimulus('');
+    }
   };
   
   return (

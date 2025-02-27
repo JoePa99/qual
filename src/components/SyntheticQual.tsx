@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './SyntheticQual.css';
+import { AIService } from '../services/aiService';
 
 interface Segment {
   id: number;
@@ -146,67 +147,44 @@ const SyntheticQual = () => {
     
     setIsProcessingStimulus(true);
     
-    // Simulate API call to get responses from AI
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate different responses based on segment
-    let responses: string[] = [];
-    const segmentId = selectedBoard.segmentId;
-    
-    if (segmentId === 1) { // Young Professionals
-      responses = [
-        `As a young professional, I think about ${newStimulus} quite often. I'd say my approach is digital-first and efficiency-oriented.`,
-        `When it comes to ${newStimulus}, I'm looking for solutions that save me time and integrate with my existing tech ecosystem.`,
-        `${newStimulus} matters to me, but I need it to be accessible on-the-go. I make most decisions on my phone while commuting or between meetings.`,
-        `I value brands that understand ${newStimulus} should be part of a seamless experience that respects my time and offers personalization.`,
-        `For ${newStimulus}, I'm willing to pay more for quality and convenience. I often ask my network for recommendations before making decisions.`
-      ];
-    } else if (segmentId === 2) { // Suburban Families
-      responses = [
-        `As a parent, ${newStimulus} is something I consider carefully because it affects the whole family. Safety and reliability are my top priorities.`,
-        `When we discuss ${newStimulus} in our household, we're always thinking about value and durability - will this last through multiple kids?`,
-        `I research ${newStimulus} extensively online, reading reviews from other parents before making any decisions. Word-of-mouth from other families also matters a lot.`,
-        `For our family, ${newStimulus} has to fit within our budget but still meet quality standards. We're willing to invest more in things we use daily.`,
-        `With ${newStimulus}, I'm looking for family-friendly options that consider the needs of different age groups and make our busy lives easier.`
-      ];
-    } else if (segmentId === 3) { // Value Seekers
-      responses = [
-        `When it comes to ${newStimulus}, I always look for the best deal. I compare prices across multiple websites and use coupon apps.`,
-        `I'm not loyal to any particular brand for ${newStimulus} - I go wherever offers the best value and lowest price at the time.`,
-        `For ${newStimulus}, I'm willing to wait for seasonal sales or special promotions before making a purchase. Patience saves money.`,
-        `I often buy ${newStimulus} at discount stores or look for second-hand options first. It's about being smart with my money.`,
-        `With ${newStimulus}, I track prices over time and have price alerts set up. I never buy at full price if I can help it.`
-      ];
-    } else if (segmentId === 4) { // Luxury Enthusiasts
-      responses = [
-        `For ${newStimulus}, I look for exceptional quality and craftsmanship. Mass-market options simply don't meet my standards.`,
-        `When considering ${newStimulus}, I research the heritage and story behind the product or service. Authenticity and exclusivity matter to me.`,
-        `I view ${newStimulus} as an investment, not just a purchase. I expect personalized service and attention to detail throughout the experience.`,
-        `With ${newStimulus}, I'm drawn to limited editions and unique offerings that reflect my personal taste and status.`,
-        `I want the experience of ${newStimulus} to be seamless across all channels - whether I'm shopping online, on my phone, or in a boutique.`
-      ];
-    }
-    
-    // Update the board with new stimulus and responses
-    const updatedBoards = qualBoards.map(board => {
-      if (board.id === selectedBoard.id) {
-        return {
-          ...board,
-          stimuli: [
-            ...board.stimuli,
-            {
-              prompt: newStimulus,
-              responses
-            }
-          ]
-        };
+    try {
+      // Call AI service to get responses
+      const result = await AIService.getSegmentResponse({
+        segmentId: selectedBoard.segmentId,
+        segmentName: selectedBoard.segmentName,
+        stimulus: newStimulus
+      });
+      
+      if (result.status === 'success' && result.data) {
+        // Update the board with new stimulus and responses
+        const updatedBoards = qualBoards.map(board => {
+          if (board.id === selectedBoard.id) {
+            return {
+              ...board,
+              stimuli: [
+                ...board.stimuli,
+                {
+                  prompt: newStimulus,
+                  responses: result.data
+                }
+              ]
+            };
+          }
+          return board;
+        });
+        
+        setQualBoards(updatedBoards);
+      } else {
+        console.error('Failed to get AI responses:', result.error);
+        alert('Failed to generate responses. Please try again.');
       }
-      return board;
-    });
-    
-    setQualBoards(updatedBoards);
-    setNewStimulus('');
-    setIsProcessingStimulus(false);
+    } catch (error) {
+      console.error('Error submitting stimulus:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setNewStimulus('');
+      setIsProcessingStimulus(false);
+    }
   };
   
   const selectedBoard = getSelectedBoardData();

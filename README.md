@@ -36,8 +36,8 @@ A React application that uses AI to transform qualitative research into customer
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
-   cd segmentation-app
+   git clone https://github.com/JoePa99/qual.git
+   cd qual
    ```
 
 2. Install dependencies:
@@ -45,31 +45,59 @@ A React application that uses AI to transform qualitative research into customer
    npm install
    ```
 
-3. Start the development server:
+3. Configure environment variables:
+   - Create a `.env` file in the root directory
+   - Add your API key for OpenAI or alternative AI service:
+     ```
+     VITE_API_URL=https://api.openai.com/v1
+     VITE_API_KEY=your_api_key_here
+     ```
+
+4. Start the development server:
    ```
    npm run dev
    ```
 
-4. Open your browser and navigate to:
+5. Open your browser and navigate to:
    ```
    http://localhost:5173
    ```
+
+### API Configuration
+
+The application can work in two modes:
+
+1. **Demo Mode**: Without an API key, the app works with simulated responses and mock data.
+
+2. **Connected Mode**: With a valid API key, the app connects to an AI service (default: OpenAI) to generate real insights.
+
+To enable Connected Mode:
+- Obtain an API key from OpenAI or your preferred AI service provider
+- Add it to the `.env` file as shown above
+- The app will automatically use real AI responses when available
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── components/      # React components
-│   ├── data/            # Data processing and management
-│   ├── services/        # API services and data fetching
-│   ├── utils/           # Utility functions
-│   ├── App.tsx          # Main app component
-│   └── main.tsx         # Application entry point
-├── public/              # Static assets
-├── index.html           # HTML template
-├── package.json         # Project dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-└── vite.config.ts       # Vite configuration
+│   ├── components/            # React components
+│   │   ├── Dashboard.tsx      # Overview and introduction component
+│   │   ├── DataUpload.tsx     # Component for ingesting research data
+│   │   ├── Segmentation.tsx   # AI segmentation and visualization
+│   │   ├── SyntheticQual.tsx  # Qualitative insights boards
+│   │   ├── FocusGroups.tsx    # Virtual focus groups with AI personas
+│   │   ├── Header.tsx         # Application header
+│   │   └── Sidebar.tsx        # Navigation sidebar
+│   ├── services/              # API services and data fetching
+│   │   └── aiService.ts       # Service for AI API communication
+│   ├── App.tsx                # Main app component with routing
+│   └── main.tsx               # Application entry point
+├── public/                    # Static assets
+├── .env                       # Environment variables (API keys)
+├── index.html                 # HTML template
+├── package.json               # Project dependencies and scripts
+├── tsconfig.json              # TypeScript configuration
+└── vite.config.ts             # Vite configuration
 ```
 
 ## Workflow

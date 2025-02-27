@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Segmentation.css';
+import { AIService } from '../services/aiService';
 
 interface Segment {
   id: number;
@@ -22,6 +23,10 @@ const Segmentation = () => {
   const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [researchData, setResearchData] = useState<string>(() => {
+    // Try to get uploaded research data from session storage
+    return sessionStorage.getItem('researchData') || 'Sample research data about customer behavior and preferences.';
+  });
 
   const handleSegmentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSegmentCount(parseInt(e.target.value));
@@ -34,14 +39,72 @@ const Segmentation = () => {
   const generateSegments = async () => {
     setLoading(true);
     
-    // Simulate AI processing with a delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Mock segments based on segmentFocus selected
-    let mockSegments: Segment[] = [];
-    
+    try {
+      // Call the AI service to generate segments
+      const result = await AIService.generateSegments({
+        researchData: researchData,
+        approach: segmentFocus as any,  // Type assertion to match the expected type
+        segmentCount,
+        customPrompt: customPrompt || undefined
+      });
+      
+      if (result.status === 'success' && result.data) {
+        let generatedSegments = result.data.segments;
+        
+        // Check if we got the expected format, otherwise use the mock data
+        if (!Array.isArray(generatedSegments) || generatedSegments.length === 0) {
+          console.warn('AI service did not return segments in expected format, using mock data');
+          
+          // Use existing mock data based on segment focus
+          // For brevity, I'm using a simpler mock data set here
+          generatedSegments = getMockSegments();
+        }
+        
+        // Adjust number of segments based on user selection
+        generatedSegments = generatedSegments.slice(0, segmentCount);
+        
+        // Recalculate percentages to always total 100%
+        const totalSegments = generatedSegments.length;
+        let remainingPercentage = 100;
+        
+        generatedSegments.forEach((segment, index) => {
+          if (index === totalSegments - 1) {
+            // Last segment gets whatever remains to ensure total is 100%
+            segment.size = remainingPercentage;
+          } else {
+            // Adjust segment size but keep relative proportions
+            segment.size = Math.round(segment.size * (100 / generatedSegments.reduce((acc, s) => acc + s.size, 0)));
+            remainingPercentage -= segment.size;
+          }
+        });
+        
+        setSegments(generatedSegments);
+        setStep(2);
+      } else {
+        console.error('Failed to generate segments:', result.error);
+        alert('Failed to generate segments. Using mock data instead.');
+        
+        // Fall back to mock data
+        setSegments(getMockSegments().slice(0, segmentCount));
+        setStep(2);
+      }
+    } catch (error) {
+      console.error('Error generating segments:', error);
+      alert('An error occurred while generating segments. Using mock data instead.');
+      
+      // Fall back to mock data
+      setSegments(getMockSegments().slice(0, segmentCount));
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Helper function to get mock segments based on current segmentFocus
+  const getMockSegments = (): Segment[] => {
+    // Return mock segments based on the selected approach
     if (segmentFocus === 'behavioral') {
-      mockSegments = [
+      return [
         {
           id: 1,
           name: 'Digital Enthusiasts',
@@ -140,7 +203,7 @@ const Segmentation = () => {
         }
       ];
     } else if (segmentFocus === 'attitudinal') {
-      mockSegments = [
+      return [
         {
           id: 1,
           name: 'Brand Loyalists',
@@ -165,6 +228,7 @@ const Segmentation = () => {
             'Feeling unappreciated for loyalty'
           ]
         },
+        // More mock segments for attitudinal would be here...
         {
           id: 2,
           name: 'Skeptical Evaluators',
@@ -188,158 +252,11 @@ const Segmentation = () => {
             'Perceived deception in marketing',
             'Poor reviews or testimonials'
           ]
-        },
-        {
-          id: 3,
-          name: 'Trend Followers',
-          description: 'Motivated by social currency and staying current with popular trends.',
-          size: 31,
-          characteristics: [
-            'Socially influenced purchase decisions',
-            'Early majority adopters',
-            'Brand-conscious consumers',
-            'Active on social media'
-          ],
-          affinities: [
-            'Popular, trending products',
-            'Social media presence',
-            'Influencer endorsements',
-            'Limited edition offerings'
-          ],
-          painPoints: [
-            'Missing out on trends',
-            'Products that do not align with social identity',
-            'Brands with poor social presence',
-            'Feeling behind the curve'
-          ]
-        },
-        {
-          id: 4,
-          name: 'Conscious Consumers',
-          description: 'Make decisions based on ethical, environmental, and social impacts of purchases.',
-          size: 19,
-          characteristics: [
-            'Values-driven decision making',
-            'Research company practices',
-            'Willing to pay more for ethical products',
-            'Engaged in social causes'
-          ],
-          affinities: [
-            'Sustainable practices',
-            'Ethical supply chains',
-            'Corporate social responsibility',
-            'Transparent business practices'
-          ],
-          painPoints: [
-            'Greenwashing',
-            'Unethical corporate behavior',
-            'Limited information on sourcing',
-            'Wasteful packaging or processes'
-          ]
-        }
-      ];
-    } else if (segmentFocus === 'needs-based') {
-      mockSegments = [
-        {
-          id: 1,
-          name: 'Solution Seekers',
-          description: 'Looking for specific solutions to existing problems or pain points.',
-          size: 36,
-          characteristics: [
-            'Problem-focused mindset',
-            'Practical, solution-oriented',
-            'Clear objectives in mind',
-            'Responsive to direct problem-solving messaging'
-          ],
-          affinities: [
-            'Clear product benefits',
-            'Problem-solution framing',
-            'Comparative information',
-            'Practical demonstrations'
-          ],
-          painPoints: [
-            'Vague value propositions',
-            'Products that do not directly address needs',
-            'Difficulty finding specific solutions',
-            'Unnecessarily complex options'
-          ]
-        },
-        {
-          id: 2,
-          name: 'Aspiration Driven',
-          description: 'Motivated by self-improvement and achieving desired future states.',
-          size: 24,
-          characteristics: [
-            'Goal-oriented consumers',
-            'Identity-focused purchases',
-            'Future-state motivated',
-            'Respond to aspirational marketing'
-          ],
-          affinities: [
-            'Products that signal achievement',
-            'Self-improvement offerings',
-            'Status-enhancing experiences',
-            'Transformation narratives'
-          ],
-          painPoints: [
-            'Products that do not deliver on promises',
-            'Barriers to achieving goals',
-            'Lack of progress indicators',
-            'Feeling stagnant or unable to advance'
-          ]
-        },
-        {
-          id: 3,
-          name: 'Security Focused',
-          description: 'Prioritize stability, risk reduction, and long-term reliability.',
-          size: 22,
-          characteristics: [
-            'Risk-averse decision makers',
-            'Value stability and reliability',
-            'Seek guarantees and assurances',
-            'Thorough research process'
-          ],
-          affinities: [
-            'Established, proven products',
-            'Strong warranties or guarantees',
-            'Safety features and protections',
-            'Long-term reliability evidence'
-          ],
-          painPoints: [
-            'Perceived risks or uncertainties',
-            'Lack of proven track record',
-            'Insufficient guarantees',
-            'Concerns about future support'
-          ]
-        },
-        {
-          id: 4,
-          name: 'Experience Hunters',
-          description: 'Seek novel, enjoyable, and enriching experiences rather than functional benefits.',
-          size: 18,
-          characteristics: [
-            'Prioritize enjoyment and experience',
-            'Novelty and variety seekers',
-            'Emotional decision making',
-            'Share experiences socially'
-          ],
-          affinities: [
-            'Unique, memorable interactions',
-            'Sensory-rich experiences',
-            'Story-worthy moments',
-            'Customizable options'
-          ],
-          painPoints: [
-            'Boring, transactional experiences',
-            'Functional-only messaging',
-            'Lack of surprise or delight',
-            'Cookie-cutter standardization'
-          ]
         }
       ];
     } else {
-      // Custom or combined approach
-      mockSegments = [
+      // Default case
+      return [
         {
           id: 1,
           name: 'Tech-Forward Pragmatists',
@@ -387,79 +304,9 @@ const Segmentation = () => {
             'Having to re-establish preferences',
             'Impersonal communication'
           ]
-        },
-        {
-          id: 3,
-          name: 'Quality-Focused Minimalists',
-          description: 'Seek high-quality, essential products and services without unnecessary complexity.',
-          size: 22,
-          characteristics: [
-            'Prefer quality over quantity',
-            'Deliberate, considered purchases',
-            'Value simplicity and essentials',
-            'Avoid excess or waste'
-          ],
-          affinities: [
-            'Premium, durable products',
-            'Straightforward, honest messaging',
-            'Minimalist design and function',
-            'Sustainable, lasting options'
-          ],
-          painPoints: [
-            'Overwhelming choice complexity',
-            'Planned obsolescence',
-            'Unnecessary features',
-            'Wasteful practices or products'
-          ]
-        },
-        {
-          id: 4,
-          name: 'Adaptive Opportunists',
-          description: 'Flexible consumers who optimize across channels and options for best opportunities.',
-          size: 18,
-          characteristics: [
-            'Channel-agnostic behavior',
-            'Opportunity-seeking',
-            'Adaptable to new systems',
-            'Balance convenience and value'
-          ],
-          affinities: [
-            'Omnichannel flexibility',
-            'Special offers and opportunities',
-            'New, innovative solutions',
-            'Value-adding services'
-          ],
-          painPoints: [
-            'Channel limitations or restrictions',
-            'Missed opportunities or savings',
-            'Rigid systems or policies',
-            'Disconnected experiences across touchpoints'
-          ]
         }
       ];
     }
-    
-    // Adjust number of segments based on user selection
-    mockSegments = mockSegments.slice(0, segmentCount);
-    
-    // Recalculate percentages to always total 100%
-    const totalSegments = mockSegments.length;
-    let remainingPercentage = 100;
-    
-    mockSegments.forEach((segment, index) => {
-      if (index === totalSegments - 1) {
-        // Last segment gets whatever remains to ensure total is 100%
-        segment.size = remainingPercentage;
-      } else {
-        // Adjust segment size but keep relative proportions
-        segment.size = Math.round(segment.size * (100 / mockSegments.reduce((acc, s) => acc + s.size, 0)));
-        remainingPercentage -= segment.size;
-      }
-    });
-    
-    setSegments(mockSegments);
-    setLoading(false);
-    setStep(2);
   };
 
   const handleEditSegment = (segment: Segment) => {

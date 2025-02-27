@@ -97,11 +97,35 @@ const DataUpload = () => {
 
     setIsProcessing(true);
     
-    // Simulate AI processing with a delay
     try {
-      // In a real app, you would send the data to an AI service
-      // If files are uploaded, you'd process them here
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Process the data
+      let processedData = '';
+      
+      if (activeTab === 'manual') {
+        // Use the manually entered text
+        processedData = researchData;
+      } else if (activeTab === 'upload' && files.length > 0) {
+        // In a real app, you would send the files to a backend to extract text
+        // Here we'll simulate reading the files
+        processedData = `Files uploaded: ${files.map(f => f.name).join(', ')}`;
+        
+        // Add industry and audience metadata
+        if (industry) {
+          processedData += `\n\nIndustry: ${industry}`;
+        }
+        if (targetAudience) {
+          processedData += `\n\nTarget Audience: ${targetAudience}`;
+        }
+        if (projectGoals) {
+          processedData += `\n\nProject Goals: ${projectGoals}`;
+        }
+      }
+      
+      // Store the processed data in sessionStorage for use in segmentation
+      sessionStorage.setItem('researchData', processedData);
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       setDataProcessed(true);
     } catch (error) {
