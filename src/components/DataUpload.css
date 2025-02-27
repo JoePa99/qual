@@ -1,0 +1,259 @@
+.data-upload h1 {
+  margin-bottom: 1.5rem;
+}
+
+.upload-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Tab Navigation */
+.input-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--mid-gray);
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  color: var(--dark-gray);
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--primary-color);
+}
+
+.tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  margin-bottom: 0.75rem;
+  color: var(--text-color);
+}
+
+.form-section h4 {
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.input-description {
+  margin-bottom: 0.75rem;
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+}
+
+.text-input,
+.select-input,
+.textarea-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--mid-gray);
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.text-input:focus,
+.select-input:focus,
+.textarea-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.textarea-input {
+  resize: vertical;
+  min-height: 150px;
+}
+
+/* File Upload Styling */
+.file-drop-area {
+  border: 2px dashed var(--mid-gray);
+  border-radius: 6px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.file-drop-area:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(58, 134, 255, 0.03);
+}
+
+.drop-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--dark-gray);
+}
+
+.file-select-label {
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  display: inline;
+  position: relative;
+}
+
+.file-input {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.uploaded-files {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--light-gray);
+  border-radius: 4px;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-name {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.file-size {
+  font-size: 0.8rem;
+  color: var(--dark-gray);
+}
+
+.remove-file-btn {
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.remove-file-btn:hover {
+  color: #f44336;
+}
+
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+}
+
+.submit-btn:disabled {
+  background-color: var(--mid-gray);
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.success-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4rem;
+  color: #4caf50;
+  margin-bottom: 1rem;
+}
+
+.success-container h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.success-container p {
+  color: var(--dark-gray);
+  margin-bottom: 2rem;
+}
+
+.next-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.next-actions a, 
+.next-actions button {
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+}
+
+.upload-instructions {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.upload-instructions h2 {
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.upload-instructions p {
+  margin-bottom: 1rem;
+  color: var(--dark-gray);
+}
+
+.upload-instructions ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.upload-instructions li {
+  margin-bottom: 0.75rem;
+  color: var(--dark-gray);
+}
+
+.instruction-note {
+  font-style: italic;
+  font-size: 0.9rem;
+}
