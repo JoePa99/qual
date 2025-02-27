@@ -1,9 +1,54 @@
+// Get configuration from localStorage or environment variables
+const getConfig = () => {
+  // First check sessionStorage (set by the Settings component)
+  const sessionProvider = window.sessionStorage.getItem('VITE_API_PROVIDER');
+  const sessionApiUrl = window.sessionStorage.getItem('VITE_API_URL');
+  const sessionApiKey = window.sessionStorage.getItem('VITE_API_KEY');
+  const sessionClaudeModel = window.sessionStorage.getItem('VITE_CLAUDE_MODEL');
+
+  // Then check localStorage
+  const localProvider = localStorage.getItem('apiProvider');
+  const localApiKey = localProvider === 'anthropic' 
+    ? localStorage.getItem('claudeApiKey') 
+    : localStorage.getItem('openaiApiKey');
+  const localClaudeModel = localStorage.getItem('claudeModel');
+
+  // Finally fall back to environment variables
+  const envProvider = import.meta.env.VITE_API_PROVIDER;
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  const envApiKey = import.meta.env.VITE_API_KEY;
+  const envClaudeModel = import.meta.env.VITE_CLAUDE_MODEL;
+
+  // Use the first available value in the priority order
+  const provider = sessionProvider || localProvider || envProvider || 'anthropic';
+  const apiKey = sessionApiKey || localApiKey || envApiKey || '';
+  const claudeModel = sessionClaudeModel || localClaudeModel || envClaudeModel || 'claude-3-sonnet-20240229';
+  
+  // Determine API URL based on provider if not explicitly set
+  const apiUrl = sessionApiUrl || (provider === 'anthropic' 
+    ? 'https://api.anthropic.com/v1' 
+    : 'https://api.openai.com/v1');
+
+  return { provider, apiUrl, apiKey, claudeModel };
+};
+
 // API configuration
-const API_PROVIDER = import.meta.env.VITE_API_PROVIDER || 'openai'; // Can be 'openai' or 'anthropic'
-const API_URL = import.meta.env.VITE_API_URL || 
-  (API_PROVIDER === 'anthropic' ? 'https://api.anthropic.com/v1' : 'https://api.openai.com/v1');
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-const CLAUDE_MODEL = import.meta.env.VITE_CLAUDE_MODEL || 'claude-3-sonnet-20240229';
+let config = getConfig();
+let API_PROVIDER = config.provider;
+let API_URL = config.apiUrl;
+let API_KEY = config.apiKey;
+let CLAUDE_MODEL = config.claudeModel;
+
+// Helper function to refresh the configuration (used when settings are updated)
+const refreshConfig = () => {
+  config = getConfig();
+  API_PROVIDER = config.provider;
+  API_URL = config.apiUrl;
+  API_KEY = config.apiKey;
+  CLAUDE_MODEL = config.claudeModel;
+  console.log('AI service configuration refreshed');
+  return config;
+};
 
 interface AIResponse {
   status: 'success' | 'error';
@@ -41,6 +86,8 @@ interface FocusGroupRequest {
  * Service for communicating with AI APIs
  */
 export const AIService = {
+  // Refresh configuration (used when settings change)
+  refreshConfig,
   /**
    * Generate segments based on research data
    */
